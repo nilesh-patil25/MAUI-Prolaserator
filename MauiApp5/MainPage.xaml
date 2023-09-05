@@ -46,7 +46,19 @@
 
             <!--Total-->
             <Grid Grid.Row="1" BackgroundColor="Maroon">
-                <Label Text="Summary - Total  : " x:Name="UpdateQty" FontAttributes="Bold" HorizontalOptions="StartAndExpand" VerticalOptions="Fill"  />
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                
+                <Label Text=" Total Count of Names : " Grid.Row="0" Grid.Column="0" HorizontalOptions="Fill"/>
+                <Label x:Name="totalCountLabel" Text="0" Grid.Row="0" Grid.Column="0" HorizontalOptions="EndAndExpand" VerticalOptions="End"/>
+
+                <!-- Label to display total sum of Qty -->
+                <Label Text="Total Sum of Qty:" Grid.Row="0" Grid.Column="3" HorizontalOptions="CenterAndExpand"/>
+                <Label x:Name="totalQtyLabel" Text="0" Grid.Row="0" Grid.Column="3" HorizontalOptions="EndAndExpand" VerticalOptions="CenterAndExpand"/>
             </Grid>
 
             <!-- Form Controls -->
@@ -103,7 +115,7 @@
                 
                 <Button Text="SAVE SVG" x:Name="GenerateSVG" Grid.Row="2" Grid.Column="0" TextColor="Green" BorderColor="White" BackgroundColor="Transparent" FontAttributes="Bold" FontSize="16" />
                 <Button Text="SAVE CSV" x:Name="GenerateCSV" Grid.Row="2" Grid.Column="1" TextColor="Red" BorderColor="White" BackgroundColor="Transparent" FontAttributes="Bold" FontSize="16" />
-                <Button Text="EXPORT PDF" x:Name="ExportPDF" Grid.Row="2" Grid.Column="2" TextColor="Red" BorderColor="White" BackgroundColor="Transparent" FontAttributes="Bold" FontSize="16" />
+                <Button Text="EXPORT PDF" x:Name="GeneratePDF" Grid.Row="2" Grid.Column="2" TextColor="Red" BorderColor="White" BackgroundColor="Transparent" FontAttributes="Bold" FontSize="16" />
                 <Button Text="EXPORT JOBS" x:Name="ExportJOBS" Grid.Row="2" Grid.Column="3" TextColor="Maroon" BorderColor="White" BackgroundColor="Transparent" FontAttributes="Bold" FontSize="16" />
 
                 <!--Laser Type-->
