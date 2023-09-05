@@ -6,6 +6,8 @@ using Svg;
 using Microsoft.Maui.Controls.Xaml;
 using System.Drawing.Printing;
 using SkiaSharp;
+using static DevExpress.Data.Helpers.ExpressiveSortInfo;
+using System.Collections.ObjectModel;
 
 namespace MauiApp5;
 
@@ -23,14 +25,15 @@ public partial class MainPage : ContentPage
         DeleteRow.Clicked += DeleteRowButton_Clicked;
         ClearTable.Clicked += ClearTableButton_Clicked;
         GenerateSVG.Clicked += GenerateSVGButton_Clicked;
-        LoadFolders();
+        GeneratePDF.Clicked += GeneratePDFButton_Clicked;
+        LoadFolders();       
     }
 
     private List<ProductModel> importedProducts = new List<ProductModel>();
     int count = 0;
     private async void ImportCSV_Clicked(object sender, EventArgs e)
     {
-        try 
+        try
         {
             var result = await FilePicker.PickAsync();
 
@@ -41,6 +44,8 @@ public partial class MainPage : ContentPage
                     using (var reader = new StreamReader(stream))
                     {
                         importedProducts.Clear(); // Clear the existing data
+                        bool isFirstRow = true;
+
                         while (!reader.EndOfStream)
                         {
                             var line = await reader.ReadLineAsync();
@@ -48,8 +53,15 @@ public partial class MainPage : ContentPage
 
                             if (values.Length >= 2)
                             {
-                                if (!string.IsNullOrWhiteSpace(values[0]) || string.IsNullOrWhiteSpace(values[1]))
+                                if (!string.IsNullOrWhiteSpace(values[0]) || !string.IsNullOrWhiteSpace(values[1]))
                                 {
+                                    // Check if this is the first row with headers
+                                    if (isFirstRow && values[0].Trim().Equals("Name", StringComparison.OrdinalIgnoreCase) &&
+                                        values[1].Trim().Equals("Qty", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        isFirstRow = false; // Skip the first row with headers
+                                        continue;
+                                    }
 
                                     importedProducts.Add(new ProductModel { Name = values[0], Qty = values[1] });
                                 }
@@ -60,13 +72,12 @@ public partial class MainPage : ContentPage
                     }
                 }
             }
+            UpdateTotals();
         }
         catch (Exception ex)
         {
             await DisplayAlert("Error", $"An error occurred: {ex.Message}", "OK");
         }
-
-        //UpdateQty();
     }
 
     private void RowsListView_ItemSelected(object sender, SelectedItemChangedEventArgs e)
@@ -95,6 +106,7 @@ public partial class MainPage : ContentPage
 
         // Update the ListView's item source
         RowsListView.ItemsSource = importedProducts.ToArray();
+        UpdateTotals();
     }
 
     private void DeleteRowButton_Clicked(object sender, EventArgs e)
@@ -109,7 +121,7 @@ public partial class MainPage : ContentPage
                 // Update the ListView's item source
                 RowsListView.ItemsSource = importedProducts.ToArray();
 
-
+                UpdateTotals();
                 // Clear the selection after deletion
                 RowsListView.SelectedItem = null;
             }
@@ -130,9 +142,10 @@ public partial class MainPage : ContentPage
 
         // Update the ListView's item source
         RowsListView.ItemsSource = importedProducts.ToArray();
+        UpdateTotals();
     }
 
-    private void GeneratePDF(object sender, EventArgs e)
+    private void GeneratePDFButton_Clicked(object sender, EventArgs e)
     {
         try
         {
@@ -245,27 +258,15 @@ public partial class MainPage : ContentPage
             folderPicker.IsEnabled = false;
         }
     }
+    private void UpdateTotals()
+    {
+        // Calculate the total count of Names and the total sum of Qty
+        int totalCount = importedProducts.Count;
+        int totalQty = importedProducts.Sum(product => int.Parse(product.Qty));
 
-    //private void LoadFolders()
-    //{
-    //    string basePath = @"C:\Users\anup.ghodake\Desktop\TestCSV";
-
-    //    if (Directory.Exists(basePath))
-    //    {
-    //        List<string> folderNames = Directory.GetDirectories(basePath)
-    //                                           .Select(Path.GetFileName)
-    //                                           .ToList();
-
-    //        folderPicker.ItemsSource = folderNames;
-    //        placeholderLabel.IsVisible = false;
-    //        folderPicker.IsVisible = true;
-    //    }
-    //    else
-    //    {
-    //        folderPicker.IsEnabled = false;
-    //        placeholderLabel.IsVisible = true;
-    //        folderPicker.IsVisible = false;
-    //    }
-    //}
+        // Update the labels with the calculated values
+        totalCountLabel.Text = totalCount.ToString();
+        totalQtyLabel.Text = totalQty.ToString();
+    }
 
 }
