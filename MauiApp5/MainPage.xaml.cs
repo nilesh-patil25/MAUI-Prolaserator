@@ -13,8 +13,6 @@ namespace MauiApp5;
 
 public partial class MainPage : ContentPage
 {
-    
-
     public MainPage()
     {
         InitializeComponent();
@@ -26,11 +24,13 @@ public partial class MainPage : ContentPage
         ClearTable.Clicked += ClearTableButton_Clicked;
         GenerateSVG.Clicked += GenerateSVGButton_Clicked;
         GeneratePDF.Clicked += GeneratePDFButton_Clicked;
+        GenerateCSV.Clicked += SaveCSVButton_Clicked;
         LoadFolders();       
     }
 
     private List<ProductModel> importedProducts = new List<ProductModel>();
     int count = 0;
+
     private async void ImportCSV_Clicked(object sender, EventArgs e)
     {
         try
@@ -145,6 +145,50 @@ public partial class MainPage : ContentPage
         UpdateTotals();
     }
 
+    private void UpdateTotals()
+    {
+        // Calculate the total count of Names and the total sum of Qty
+        int totalCount = importedProducts.Count;
+        int totalQty = importedProducts.Sum(product => int.Parse(product.Qty));
+
+        // Update the labels with the calculated values
+        totalCountLabel.Text = totalCount.ToString();
+        totalQtyLabel.Text = totalQty.ToString();
+    }
+
+    private void SaveCSVButton_Clicked(object sender, EventArgs e)
+    {
+        try
+        {
+            StringBuilder csvBuilder = new StringBuilder();
+            csvBuilder.AppendLine("Name,Qty");
+
+            foreach (var product in importedProducts)
+            {
+                csvBuilder.AppendLine($"{product.Name},{product.Qty}");
+            }
+
+            string csvContent = csvBuilder.ToString();
+
+            string customDirectory = @"D:\Ortigo\ExportCSV";
+            Directory.CreateDirectory(customDirectory);
+
+            string fileName = $"ExportedCSV_{DateTime.Now.ToString("yyyyMMddHHmmss")}.csv";
+            string outputPath = Path.Combine(customDirectory, fileName);
+
+            File.WriteAllText(outputPath, csvContent);
+
+            //Console.WriteLine($"CSV saved to: {outputPath}");
+            DisplayAlert("Success", "Data converted and saved as CSV.", "OK");
+        }
+        catch (Exception ex)
+        {
+            //Console.WriteLine($"An error occurred: {ex.Message}");
+            DisplayAlert("Error", "An error occurred while saving the CSV.", "OK");
+        }
+    }
+
+    [Obsolete]
     private void GeneratePDFButton_Clicked(object sender, EventArgs e)
     {
         try
@@ -257,16 +301,6 @@ public partial class MainPage : ContentPage
         {
             folderPicker.IsEnabled = false;
         }
-    }
-    private void UpdateTotals()
-    {
-        // Calculate the total count of Names and the total sum of Qty
-        int totalCount = importedProducts.Count;
-        int totalQty = importedProducts.Sum(product => int.Parse(product.Qty));
-
-        // Update the labels with the calculated values
-        totalCountLabel.Text = totalCount.ToString();
-        totalQtyLabel.Text = totalQty.ToString();
     }
 
 }
