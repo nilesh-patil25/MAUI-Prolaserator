@@ -1,13 +1,12 @@
 ﻿using MauiApp5.Models;
 using System.Drawing;
-using IronPdf;
 using System.Text;
 using Svg;
-using Microsoft.Maui.Controls.Xaml;
-using System.Drawing.Printing;
-using SkiaSharp;
-using static DevExpress.Data.Helpers.ExpressiveSortInfo;
-using System.Collections.ObjectModel;
+using Newtonsoft.Json; 
+using System.Reflection;
+using DevExpress.Data.Browsing;
+using System.Configuration;
+using System.ComponentModel;
 
 namespace MauiApp5;
 
@@ -25,7 +24,9 @@ public partial class MainPage : ContentPage
         GenerateSVG.Clicked += GenerateSVGButton_Clicked;
         GeneratePDF.Clicked += GeneratePDFButton_Clicked;
         GenerateCSV.Clicked += SaveCSVButton_Clicked;
-        LoadFolders();       
+        browse.Clicked += OnBrowseClicked;
+        LoadFolders();
+        LoadDataFromJson();
     }
 
     private List<ProductModel> importedProducts = new List<ProductModel>();
@@ -128,7 +129,7 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-             DisplayAlert("Error", $"An error occurred: {ex.Message}", "OK");
+            DisplayAlert("Error", $"An error occurred: {ex.Message}", "OK");
         }
     }
 
@@ -302,5 +303,88 @@ public partial class MainPage : ContentPage
             folderPicker.IsEnabled = false;
         }
     }
+
+    private void LoadDataFromJson() 
+    {
+        //string jsonFilePath = ConfigurationManager.AppSettings["Template.json"]; 
+        string jsonFilePath = "D:\\Projects\\MauiApp5\\MauiApp5\\Resources\\Template.json";
+
+        List<string> myList = new List<string>(); 
+        try 
+        { 
+            string jsonContent = File.ReadAllText(jsonFilePath); 
+            myList = JsonConvert.DeserializeObject<List<string>>(jsonContent);
+
+            selecttemplate.ItemsSource = myList;
+        } 
+        catch (Exception ex) 
+        {
+            selecttemplate.IsEnabled = false;
+            Console.WriteLine("An error occurred: " + ex.Message); 
+        } 
+    }
+
+    private async void OnBrowseClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            List<string> dataToSave = importedProducts.Select(product => $"{product.Name}, {product.Qty}").ToList();
+
+            // Get the selected radio button
+            string selectedFolder = "";
+
+            if (Legend.IsChecked)
+            {
+                selectedFolder = "Legend";
+            }
+            else if (Radius.IsChecked)
+            {
+                selectedFolder = "Radius";
+            }
+            else
+            {
+                await DisplayAlert("Error", "Please select a radio button.", "OK");
+                return;
+            }
+
+            // Get the selected template from the Picker
+            string selectedTemplate = selecttemplate.SelectedItem as string;
+
+            if (string.IsNullOrEmpty(selectedTemplate))
+            {
+                await DisplayAlert("Error", "Please select a template.", "OK");
+                return;
+            }
+
+            // Get the file name from the "Jobs #" entry
+            string jobsNumber = jobs.Text.Trim();
+
+            if (string.IsNullOrEmpty(jobsNumber))
+            {
+                await DisplayAlert("Error", "Please enter a Jobs #.", "OK");
+                return;
+            }
+
+            // Use the "Jobs #" as part of the file name
+            string fileName = $"{jobsNumber}.txt"; // Modify the file name construction here
+
+            // Get the folder path based on the selected radio button
+            string folderPath = Path.Combine(@"D:\Ortigo\", selectedFolder);
+
+            // Create the template folder if it doesn't exist
+            Directory.CreateDirectory(Path.Combine(folderPath, selectedTemplate));
+
+            string filePath = Path.Combine(folderPath, selectedTemplate, fileName);
+
+            File.WriteAllLines(filePath, dataToSave);
+
+            await DisplayAlert("Success", "Data saved to local storage.", "OK");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", "Error while saving Data to local storage.", "OK");
+        }
+    }
+
 
 }
