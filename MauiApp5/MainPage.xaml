@@ -174,7 +174,7 @@
                     </Grid.ColumnDefinitions>
 
                     <!--<Label Text="Select Customer Folder : " TextColor="White" FontAttributes="Bold" VerticalOptions="CenterAndExpand" />-->
-                    <Entry x:Name="customerfolder" Grid.Column="0" HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand" Placeholder=" Select Customer Folder  " />
+                    <Label x:Name="filePathLabel" Grid.Column="0" HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand" Text="Folder : " />
                     <Button Text="Browse" x:Name="browse" Grid.Column="2" TextColor="Brown" FontAttributes="Bold" BorderColor="White" BackgroundColor="Transparent" HorizontalOptions="CenterAndExpand" VerticalOptions="Center" />
                 </Grid>
 

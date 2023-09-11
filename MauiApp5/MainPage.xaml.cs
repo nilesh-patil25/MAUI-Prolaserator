@@ -185,7 +185,7 @@ public partial class MainPage : ContentPage
         catch (Exception ex)
         {
             //Console.WriteLine($"An error occurred: {ex.Message}");
-            DisplayAlert("Error", "An error occurred while saving the CSV.", "OK");
+            DisplayAlert("Error", $"An error occurred while saving the CSV: {ex.Message}", "OK");
         }
     }
 
@@ -374,7 +374,9 @@ public partial class MainPage : ContentPage
             // Create the template folder if it doesn't exist
             Directory.CreateDirectory(Path.Combine(folderPath, selectedTemplate));
 
+            //string filePath = Path.Combine(folderPath, selectedTemplate, fileName);
             string filePath = Path.Combine(folderPath, selectedTemplate, fileName);
+            filePathLabel.Text = filePath;
 
             File.WriteAllLines(filePath, dataToSave);
 
@@ -382,7 +384,7 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", "Error while saving Data to local storage.", "OK");
+            await DisplayAlert("Error", $"Error while saving Data to local storage: {ex.Message}.", "OK");
         }
     }
 
