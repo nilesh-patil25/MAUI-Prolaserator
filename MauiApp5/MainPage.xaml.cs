@@ -328,7 +328,12 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            List<string> dataToSave = importedProducts.Select(product => $"{product.Name}, {product.Qty}").ToList();
+            // Check if importedProducts is empty
+            if (importedProducts.Count == 0)
+            {
+                await DisplayAlert("Error", "No data to save.", "OK");
+                return;
+            }
 
             // Get the selected radio button
             string selectedFolder = "";
@@ -366,25 +371,57 @@ public partial class MainPage : ContentPage
             }
 
             // Use the "Jobs #" as part of the file name
-            string fileName = $"{jobsNumber}.txt"; // Modify the file name construction here
+            string fileName = $"{selectedFolder}.svg"; // Change the file extension to .svg
 
             // Get the folder path based on the selected radio button
-            string folderPath = Path.Combine(@"D:\Ortigo\", selectedFolder);
+            string folderPath = Path.Combine(@"D:\Ortigo\", jobsNumber);
 
             // Create the template folder if it doesn't exist
             Directory.CreateDirectory(Path.Combine(folderPath, selectedTemplate));
 
-            //string filePath = Path.Combine(folderPath, selectedTemplate, fileName);
-            string filePath = Path.Combine(folderPath, selectedTemplate, fileName);
-            filePathLabel.Text = filePath;
+            // Generate and save the SVG file
+            GenerateAndSaveSVG(Path.Combine(folderPath, selectedTemplate, fileName));
 
-            File.WriteAllLines(filePath, dataToSave);
-
-            await DisplayAlert("Success", "Data saved to local storage.", "OK");
+            await DisplayAlert("Success", "SVG data saved to local storage.", "OK");
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Error while saving Data to local storage: {ex.Message}.", "OK");
+            await DisplayAlert("Error", $"Error while saving SVG data to local storage: {ex.Message}.", "OK");
+        }
+    }
+
+    private void GenerateAndSaveSVG(string filePath)
+    {
+        try
+        {
+            var svgDocument = new SvgDocument();
+
+            float yOffset = 0;
+
+            foreach (var product in importedProducts)
+            {
+                var text = new SvgText
+                {
+                    FontSize = new SvgUnit(12),
+                    Fill = new SvgColourServer(System.Drawing.Color.Black),
+                    X = new SvgUnitCollection { GetXPosition(product.Name) },
+                    Y = new SvgUnitCollection { yOffset },
+                    Text = $"{product.Name}         {product.Qty}" // Adding line break
+                };
+
+                svgDocument.Children.Add(text);
+
+                yOffset += CalculateTextHeight(text) + 0; // Adjust spacing
+            }
+
+            svgDocument.Write(filePath);
+
+            Console.WriteLine($"SVG saved to: {filePath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+            DisplayAlert("Error", "An error occurred while generating the SVG.", "OK");
         }
     }
 
