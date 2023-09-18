@@ -7,12 +7,15 @@ using System.Reflection;
 using DevExpress.Data.Browsing;
 using System.Configuration;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Configuration;
 
 namespace MauiApp5;
 
 public partial class MainPage : ContentPage
 {
-    public MainPage()
+    private readonly IConfiguration _configuration;
+    public MainPage(IConfiguration configuration)
     {
         InitializeComponent();
         RowsListView.ItemsSource = importedProducts;
@@ -24,7 +27,7 @@ public partial class MainPage : ContentPage
         GenerateSVG.Clicked += GenerateSVGButton_Clicked;
         GeneratePDF.Clicked += GeneratePDFButton_Clicked;
         GenerateCSV.Clicked += SaveCSVButton_Clicked;
-        browse.Clicked += OnBrowseClicked;
+        _configuration = configuration;
         LoadFolders();
         LoadDataFromJson();
     }
@@ -171,7 +174,7 @@ public partial class MainPage : ContentPage
 
             string csvContent = csvBuilder.ToString();
 
-            string customDirectory = @"D:\Ortigo\ExportCSV";
+            string customDirectory = _configuration["outputRootCSV"];
             Directory.CreateDirectory(customDirectory);
 
             string fileName = $"ExportedCSV_{DateTime.Now.ToString("yyyyMMddHHmmss")}.csv";
@@ -212,7 +215,8 @@ public partial class MainPage : ContentPage
             HtmlToPdf renderer = new HtmlToPdf();
             IronPdf.PdfDocument pdfDocument = renderer.RenderHtmlAsPdf(htmlContent);
 
-            string customDirectory = @"D:\Ortigo\ExportPdf";
+            string customDirectory = _configuration["outputRootPDF"];
+                //@"C:\MAUI-Prolaserator\ExportedPDF";
             string fileName = $"ExportJob_{DateTime.Now.ToString("yyyyMMddHHmmss")}.pdf"; // Include timestamp in the filename
 
             string outputPath = Path.Combine(customDirectory, fileName);
@@ -228,103 +232,7 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private void GenerateSVGButton_Clicked(object sender, EventArgs e)
-    {
-        try
-        {
-            var svgDocument = new SvgDocument();
-
-            float yOffset = 0;
-
-            foreach (var product in importedProducts)
-            {
-                var text = new SvgText
-                {
-                    FontSize = new SvgUnit(12),
-                    Fill = new SvgColourServer(System.Drawing.Color.Black),
-                    X = new SvgUnitCollection { GetXPosition(product.Name) },
-                    Y = new SvgUnitCollection { yOffset },
-                    Text = $"{product.Name}         {product.Qty}" // Adding line break
-                };
-
-                svgDocument.Children.Add(text);
-
-                yOffset += CalculateTextHeight(text) + 0; // Adjust spacing
-            }
-
-            string customDirectory = @"D:\Ortigo\ExportSVG";
-            Directory.CreateDirectory(customDirectory);
-
-            string fileName = $"SaveSVG_{DateTime.Now.ToString("yyyyMMddHHmmss")}.svg";
-            string outputPath = Path.Combine(customDirectory, fileName);
-
-            svgDocument.Write(outputPath);
-
-            Console.WriteLine($"SVG saved to: {outputPath}");
-            DisplayAlert("Success", "Object data converted and saved as SVG.", "OK");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occurred: {ex.Message}");
-            DisplayAlert("Error", "An error occurred while generating the SVG.", "OK");
-        }
-    }
-
-    private float CalculateTextHeight(SvgText text)
-    {
-        using (var font = new System.Drawing.Font("Arial", (float)text.FontSize.Value))
-        using (var bmp = new Bitmap(1, 1))
-        using (var graphics = Graphics.FromImage(bmp))
-        {
-            var size = graphics.MeasureString(text.Text, font);
-            return size.Height;
-        }
-    }
-
-    private static float GetXPosition(string Name)
-    {
-        return Name.Length * 1;
-    }
-
-    private void LoadFolders()
-    {
-        string basePath = @"C:\Users\anup.ghodake\Desktop\TestCSV";
-
-        if (Directory.Exists(basePath))
-        {
-            List<string> folderNames = Directory.GetDirectories(basePath)
-                                               .Select(Path.GetFileName)
-                                               .ToList();
-
-            folderPicker.ItemsSource = folderNames;
-        }
-        else
-        {
-            folderPicker.IsEnabled = false;
-        }
-    }
-
-    private void LoadDataFromJson() 
-    {
-        //string jsonFilePath = ConfigurationManager.AppSettings["Template.json"]; 
-        string jsonFilePath = "D:\\Projects\\MauiApp5\\MauiApp5\\Resources\\Template.json";
-
-        List<string> myList = new List<string>(); 
-        try 
-        { 
-            string jsonContent = File.ReadAllText(jsonFilePath); 
-            myList = JsonConvert.DeserializeObject<List<string>>(jsonContent);
-
-            selecttemplate.ItemsSource = myList;
-        } 
-        catch (Exception ex) 
-        {
-            selecttemplate.IsEnabled = false;
-            Console.WriteLine("An error occurred: " + ex.Message); 
-        } 
-    }
-
-    private async void OnBrowseClicked(object sender, EventArgs e)
+    private async void GenerateSVGButton_Clicked(object sender, EventArgs e)
     {
         try
         {
@@ -354,6 +262,7 @@ public partial class MainPage : ContentPage
 
             // Get the selected template from the Picker
             string selectedTemplate = selecttemplate.SelectedItem as string;
+            selectedTemplate = selectedTemplate.Replace("\"", "");
 
             if (string.IsNullOrEmpty(selectedTemplate))
             {
@@ -371,10 +280,11 @@ public partial class MainPage : ContentPage
             }
 
             // Use the "Jobs #" as part of the file name
-            string fileName = $"{selectedFolder}.svg"; // Change the file extension to .svg
+            string fileName = $"{selectedFolder}{DateTime.Now.ToString("yyyyMMddHHmmss")}.svg"; // Change the file extension to .svg
 
             // Get the folder path based on the selected radio button
-            string folderPath = Path.Combine(@"D:\Ortigo\", jobsNumber);
+            var svgFolder= _configuration["outputRoot"];
+            string folderPath = Path.Combine(svgFolder, jobsNumber);
 
             // Create the template folder if it doesn't exist
             Directory.CreateDirectory(Path.Combine(folderPath, selectedTemplate));
@@ -388,6 +298,59 @@ public partial class MainPage : ContentPage
         {
             await DisplayAlert("Error", $"Error while saving SVG data to local storage: {ex.Message}.", "OK");
         }
+    }
+
+    private float CalculateTextHeight(SvgText text)
+    {
+        using (var font = new System.Drawing.Font("Arial", (float)text.FontSize.Value))
+        using (var bmp = new Bitmap(1, 1))
+        using (var graphics = Graphics.FromImage(bmp))
+        {
+            var size = graphics.MeasureString(text.Text, font);
+            return size.Height;
+        }
+    }
+
+    private static float GetXPosition(string Name)
+    {
+        return Name.Length * 1;
+    }
+
+    private void LoadFolders()
+    {
+        string basePath = @"C:\MAUI-Prolaserator\Exported_CSV";
+
+        if (Directory.Exists(basePath))
+        {
+            List<string> folderNames = Directory.GetDirectories(basePath)
+                                               .Select(Path.GetFileName)
+                                               .ToList();
+
+            folderPicker.ItemsSource = folderNames;
+        }
+        else
+        {
+            folderPicker.IsEnabled = false;
+        }
+    }
+
+    private void LoadDataFromJson() 
+    {
+        //string jsonFilePath = ConfigurationManager.AppSettings["Template.json"]; 
+        string jsonFilePath = _configuration["TemplatesJson"];
+        List<string> myList = new List<string>(); 
+        try 
+        { 
+            string jsonContent = File.ReadAllText(jsonFilePath); 
+            myList = JsonConvert.DeserializeObject<List<string>>(jsonContent);
+
+            selecttemplate.ItemsSource = myList;
+        } 
+        catch (Exception ex) 
+        {
+            selecttemplate.IsEnabled = false;
+            Console.WriteLine("An error occurred: " + ex.Message); 
+        } 
     }
 
     private void GenerateAndSaveSVG(string filePath)
@@ -424,6 +387,5 @@ public partial class MainPage : ContentPage
             DisplayAlert("Error", "An error occurred while generating the SVG.", "OK");
         }
     }
-
-
+   
 }
